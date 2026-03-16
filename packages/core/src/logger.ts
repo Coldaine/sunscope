@@ -163,6 +163,20 @@ export class TestLogger implements ILogger {
   findByMessage(substring: string): LogEntry | undefined {
     return this.entries.find(e => e.message.includes(substring));
   }
+
+  /**
+   * Get the last captured entry
+   */
+  getLastEntry(): LogEntry | undefined {
+    return this.entries[this.entries.length - 1];
+  }
+
+  /**
+   * Get entry count
+   */
+  get count(): number {
+    return this.entries.length;
+  }
 }
 
 /**

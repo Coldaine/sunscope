@@ -92,6 +92,26 @@ describe('Logger', () => {
       const entry = logger.entries[0];
       expect(entry.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     });
+
+    it('should get last entry', () => {
+      logger.debug('first');
+      logger.debug('second');
+      
+      const last = logger.getLastEntry();
+      expect(last?.message).toBe('second');
+    });
+
+    it('should return undefined for last entry when empty', () => {
+      expect(logger.getLastEntry()).toBeUndefined();
+    });
+
+    it('should get entry count', () => {
+      expect(logger.count).toBe(0);
+      logger.debug('test');
+      expect(logger.count).toBe(1);
+      logger.info('test2');
+      expect(logger.count).toBe(2);
+    });
   });
 
   describe('NullLogger', () => {
