@@ -1,0 +1,18 @@
+{
+  "name": "@sunscope/monorepo",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "typescript": "5.4.5",
+    "jest": "29.7.0",
+    "@types/jest": "29.5.12",
+    "ts-jest": "29.1.2"
+  }
+}
