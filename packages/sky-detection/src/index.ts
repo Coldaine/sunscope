@@ -10,7 +10,7 @@ export * from './types';
 export * from './sky-mask';
 
 // Hemisphere stitcher (R-SKY-002)
-export * from './hemisphere-stitcher';
+// export * from './hemisphere-stitcher';
 
 // Arc integrator (R-SKY-003)
 // export * from './arc-integrator';
