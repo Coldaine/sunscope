@@ -13,7 +13,7 @@ export * from './sky-mask';
 export * from './hemisphere-stitcher';
 
 // Arc integrator (R-SKY-003)
-// export * from './arc-integrator';
+export * from './arc-integrator';
 
 // Sky classifier (R-SKY-004)
 // export * from './sky-classifier';
