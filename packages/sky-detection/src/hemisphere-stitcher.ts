@@ -249,6 +249,20 @@ export function stitchFrame(
 
   const { width, height, data } = frame.pixelClassifications;
 
+  // Validate pixel grid dimensions
+  if (data.length !== height) {
+    throw new Error(
+      `Pixel grid row count (${data.length}) doesn't match height (${height})`
+    );
+  }
+  for (let y = 0; y < height; y++) {
+    if (data[y].length !== width) {
+      throw new Error(
+        `Pixel grid column count (${data[y].length}) at row ${y} doesn't match width (${width})`
+      );
+    }
+  }
+
   // Process each pixel in the grid
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {

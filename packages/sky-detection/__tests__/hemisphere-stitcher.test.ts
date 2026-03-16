@@ -560,5 +560,50 @@ describe('R-SKY-002: Hemisphere Stitcher', () => {
       expect(updatedMask.metadata.lastUpdated).not.toBeNull();
       expect(updatedMask.metadata.lastUpdated!.getTime()).toBeGreaterThanOrEqual(beforeTime.getTime());
     });
+
+    it('should throw for mismatched pixel grid dimensions (rows)', () => {
+      const mask = createEmptySkyMask(logger);
+      
+      const frame = createScanFrame({
+        deviceAzimuth: 0,
+        deviceElevation: 0,
+        deviceRoll: 0,
+        fieldOfViewH: 60,
+        fieldOfViewV: 60,
+        pixelClassifications: {
+          width: 2,
+          height: 3, // Says 3 rows
+          data: [
+            [ObstructionType.Sky, ObstructionType.Sky],
+            [ObstructionType.Sky, ObstructionType.Sky]
+            // Only 2 rows provided
+          ]
+        }
+      });
+
+      expect(() => stitchFrame(mask, frame, logger)).toThrow('row count');
+    });
+
+    it('should throw for mismatched pixel grid dimensions (columns)', () => {
+      const mask = createEmptySkyMask(logger);
+      
+      const frame = createScanFrame({
+        deviceAzimuth: 0,
+        deviceElevation: 0,
+        deviceRoll: 0,
+        fieldOfViewH: 60,
+        fieldOfViewV: 60,
+        pixelClassifications: {
+          width: 3, // Says 3 columns
+          height: 2,
+          data: [
+            [ObstructionType.Sky, ObstructionType.Sky], // Only 2 columns
+            [ObstructionType.Sky, ObstructionType.Sky]
+          ]
+        }
+      });
+
+      expect(() => stitchFrame(mask, frame, logger)).toThrow('column count');
+    });
   });
 });
