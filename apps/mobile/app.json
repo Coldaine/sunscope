@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "SunScope",
+    "slug": "sunscope",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A1628"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "xyz.moosegoose.sunscope",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "SunScope uses your location to calculate sun position for your exact spot on Earth.",
+        "NSCameraUsageDescription": "SunScope uses the camera for AR sun path visualization and sky analysis."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A1628"
+      },
+      "package": "xyz.moosegoose.sunscope"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "SunScope uses your location to calculate sun position for your exact spot on Earth."
+        }
+      ]
+    ]
+  }
+}
