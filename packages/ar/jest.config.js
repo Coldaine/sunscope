@@ -5,6 +5,7 @@ module.exports = {
   roots: ['<rootDir>/__tests__'],
   moduleNameMapper: {
     '^@sunscope/ar/(.*)$': '<rootDir>/src/$1',
-    '^@sunscope/core$': '<rootDir>/../core/src/types', // Fallback for types
+    '^@sunscope/core$': '<rootDir>/../core/src',
+    '^@reactvision/react-viro$': '<rootDir>/__mocks__/@reactvision/react-viro.ts'
   }
 };
