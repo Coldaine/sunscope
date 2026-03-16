@@ -143,4 +143,60 @@ describe('HeadingSmoother — reset', () => {
     smoother.reset();
     expect(smoother.current).toBeNull();
   });
+
+  it('update after reset gives fresh start', () => {
+    const smoother = new HeadingSmoother(0.3);
+    smoother.update({ heading: 10, accuracy: 5, timestamp: 1 });
+    smoother.update({ heading: 20, accuracy: 5, timestamp: 2 });
+    smoother.reset();
+    const r = smoother.update({ heading: 270, accuracy: 5, timestamp: 3 });
+    expect(r.heading).toBe(270); // first reading after reset
+    expect(r.sampleCount).toBe(1);
+  });
+});
+
+describe('HeadingSmoother — alpha extremes', () => {
+  it('alpha=0 locks to first reading forever', () => {
+    const smoother = new HeadingSmoother(0);
+    smoother.update({ heading: 45, accuracy: 5, timestamp: 1 });
+    const r = smoother.update({ heading: 200, accuracy: 5, timestamp: 2 });
+    // alpha=0: smoothed + 0*delta = no movement
+    expect(r.heading).toBeCloseTo(45);
+  });
+
+  it('alpha=1 instantly jumps to each new reading', () => {
+    const smoother = new HeadingSmoother(1.0);
+    smoother.update({ heading: 0, accuracy: 5, timestamp: 1 });
+    expect(smoother.update({ heading: 90, accuracy: 5, timestamp: 2 }).heading).toBeCloseTo(90);
+    expect(smoother.update({ heading: 270, accuracy: 5, timestamp: 3 }).heading).toBeCloseTo(270);
+    expect(smoother.update({ heading: 1, accuracy: 5, timestamp: 4 }).heading).toBeCloseTo(1);
+  });
+});
+
+describe('HeadingSmoother — convergence', () => {
+  it('converges to constant input within 20 samples (alpha=0.3)', () => {
+    const smoother = new HeadingSmoother(0.3);
+    // Start far away
+    smoother.update({ heading: 180, accuracy: 5, timestamp: 0 });
+    for (let i = 1; i <= 20; i++) {
+      smoother.update({ heading: 45, accuracy: 5, timestamp: i * 100 });
+    }
+    // After 20 iterations with constant 45°, should be very close
+    const diff = Math.abs(shortestAngularDistance(smoother.current!, 45));
+    expect(diff).toBeLessThan(1);
+  });
+});
+
+describe('shortestAngularDistance — additional', () => {
+  it('same angle → 0', () => {
+    expect(shortestAngularDistance(123, 123)).toBe(0);
+  });
+
+  it('0° to 359° = -1° (not +359°)', () => {
+    expect(shortestAngularDistance(0, 359)).toBe(-1);
+  });
+
+  it('359° to 0° = +1°', () => {
+    expect(shortestAngularDistance(359, 0)).toBe(1);
+  });
 });

@@ -1,4 +1,4 @@
-import { logger } from './logger';
+import { Logger, logger as defaultLogger } from './logger';
 
 /**
  * Converts radians to degrees.
@@ -25,7 +25,8 @@ export function degToRad(deg: number): number {
  * @param azimuthRad suncalc azimuth in radians (0 = south, PI/2 = west, -PI/2 = east)
  * @returns compass azimuth in degrees [0, 360) (0 = north, 90 = east)
  */
-export function suncalcToCompass(azimuthRad: number): number {
+export function suncalcToCompass(azimuthRad: number, log?: Logger): number {
+  const l = log ?? defaultLogger;
   const azimuthDeg = radToDeg(azimuthRad);
   
   // suncalc: 0=south. compass: 180=south. Shift by +180.
@@ -34,7 +35,7 @@ export function suncalcToCompass(azimuthRad: number): number {
   // Wrap safely using JS modulo trick for negatives
   const compassDeg = ((rawCompass % 360) + 360) % 360;
   
-  logger.debug('Converted suncalc azimuth to compass', {
+  l.debug('Converted suncalc azimuth to compass', {
     inputRad: azimuthRad,
     intermediateDeg: azimuthDeg,
     outputDeg: compassDeg

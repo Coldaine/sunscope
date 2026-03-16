@@ -146,3 +146,54 @@ describe('getSunTimes — suncalc regression (±90s)', () => {
   });
 });
 
+describe('getSunTimes — field ordering invariants', () => {
+  it('dawn < sunrise < sunriseEnd', () => {
+    const t = getSunTimes(LAT, LON, new Date('2026-06-21T12:00:00Z'));
+    expect(t.dawn.getTime()).toBeLessThan(t.sunrise.getTime());
+    expect(t.sunrise.getTime()).toBeLessThan(t.sunriseEnd.getTime());
+  });
+
+  it('sunsetStart < sunset < dusk', () => {
+    const t = getSunTimes(LAT, LON, new Date('2026-06-21T12:00:00Z'));
+    expect(t.sunsetStart.getTime()).toBeLessThan(t.sunset.getTime());
+    expect(t.sunset.getTime()).toBeLessThan(t.dusk.getTime());
+  });
+
+  it('nightEnd < nauticalDawn < dawn < sunrise < sunset < dusk < nauticalDusk < night', () => {
+    const t = getSunTimes(LAT, LON, new Date('2026-06-21T12:00:00Z'));
+    const order = [
+      t.nightEnd, t.nauticalDawn, t.dawn, t.sunrise,
+      t.sunset, t.dusk, t.nauticalDusk, t.night
+    ].map(d => d.getTime());
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i]).toBeGreaterThan(order[i - 1]);
+    }
+  });
+
+  it('summer has longer day than winter (sunrise-sunset span)', () => {
+    const summer = getSunTimes(LAT, LON, new Date('2026-06-21T12:00:00Z'));
+    const winter = getSunTimes(LAT, LON, new Date('2026-12-21T12:00:00Z'));
+    const summerDayMs = summer.sunset.getTime() - summer.sunrise.getTime();
+    const winterDayMs = winter.sunset.getTime() - winter.sunrise.getTime();
+    expect(summerDayMs).toBeGreaterThan(winterDayMs);
+  });
+});
+
+describe('getSunPosition — other latitudes', () => {
+  it('equator near March equinox: noon altitude ≈ 90°', () => {
+    // At the equator on equinox, sun passes nearly overhead
+    const pos = getSunPosition(0, 0, new Date('2026-03-20T12:00:00Z'));
+    // noon at lon=0 is ~12:00 UTC; altitude should be very high
+    expect(pos.altitude).toBeGreaterThan(80);
+  });
+
+  it('southern hemisphere: noon azimuth is near north (350°-10°)', () => {
+    // Sydney -33.87, 151.21 — noon is around 02:00 UTC
+    const pos = getSunPosition(-33.87, 151.21, new Date('2026-06-21T02:00:00Z'));
+    // In southern hemisphere, sun is in the northern sky at noon
+    // azimuth should be near 0° (north) — within 0-45° or 315-360°
+    const az = pos.azimuth;
+    expect(az < 45 || az > 315).toBe(true);
+  });
+});
+

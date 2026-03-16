@@ -69,3 +69,46 @@ describe('computeShadow — trig uses radians not degrees', () => {
     expect(result.lengthMeters).toBeCloseTo(5.0, 5);
   });
 });
+
+describe('computeShadow — proportionality', () => {
+  it('doubling height doubles shadow length at same angle', () => {
+    const r1 = computeShadow(2, 180, 30);
+    const r2 = computeShadow(4, 180, 30);
+    expect(r2.lengthMeters).toBeCloseTo(r1.lengthMeters * 2, 5);
+  });
+
+  it('height=0 → shadow length=0', () => {
+    const result = computeShadow(0, 180, 45);
+    expect(result.lengthMeters).toBeCloseTo(0, 5);
+    expect(result.clamped).toBe(false);
+  });
+});
+
+describe('computeShadow — extreme altitudes', () => {
+  it('altitude=89° → very short shadow', () => {
+    const result = computeShadow(10, 180, 89);
+    // tan(89°) ≈ 57.29, so length ≈ 10/57.29 ≈ 0.175m
+    expect(result.lengthMeters).toBeLessThan(0.2);
+    expect(result.clamped).toBe(false);
+  });
+
+  it('altitude just above 0° (0.1°) → clamped to 100m', () => {
+    const result = computeShadow(1, 180, 0.1);
+    expect(result.lengthMeters).toBe(100);
+    expect(result.clamped).toBe(true);
+  });
+
+  it('deeply negative altitude (-45°) → Infinity', () => {
+    const result = computeShadow(1, 180, -45);
+    expect(result.lengthMeters).toBe(Infinity);
+  });
+});
+
+describe('computeShadow — logging', () => {
+  it('accepts a custom logger without errors', () => {
+    const { TestLogger } = require('../src/logger');
+    const log = new TestLogger('shadow-test');
+    computeShadow(1, 180, 45, log);
+    expect(log.entries.length).toBeGreaterThan(0);
+  });
+});

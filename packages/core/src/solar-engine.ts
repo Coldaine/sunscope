@@ -1,5 +1,5 @@
 import * as suncalc from 'suncalc';
-import { logger } from './logger';
+import { Logger, DefaultLogger } from './logger';
 import { suncalcToCompass, radToDeg } from './solar-convert';
 import { SunPosition, SunTimes } from './core-types';
 
@@ -12,7 +12,8 @@ import { SunPosition, SunTimes } from './core-types';
  * @param date UTC Date
  * @returns SunPosition { azimuth: number, altitude: number }
  */
-export function getSunPosition(lat: number, lon: number, date: Date): SunPosition {
+export function getSunPosition(lat: number, lon: number, date: Date, log?: Logger): SunPosition {
+  const l = log ?? new DefaultLogger('solar-engine');
   const startMs = Date.now();
   
   const rawPos = suncalc.getPosition(date, lat, lon);
@@ -25,7 +26,7 @@ export function getSunPosition(lat: number, lon: number, date: Date): SunPositio
     altitude: altitudeDeg
   };
 
-  logger.debug('getSunPosition computed', {
+  l.debug('getSunPosition computed', {
     input: { lat, lon, date: date.toISOString() },
     rawOutput: { azimuth: rawPos.azimuth, altitude: rawPos.altitude },
     convertedOutput: result,
@@ -44,12 +45,13 @@ export function getSunPosition(lat: number, lon: number, date: Date): SunPositio
  * @param date UTC Date
  * @returns SunTimes object
  */
-export function getSunTimes(lat: number, lon: number, date: Date): SunTimes {
+export function getSunTimes(lat: number, lon: number, date: Date, log?: Logger): SunTimes {
+  const l = log ?? new DefaultLogger('solar-engine');
   const startMs = Date.now();
   
   const rawTimes = suncalc.getTimes(date, lat, lon);
   
-  logger.debug('getSunTimes computed', {
+  l.debug('getSunTimes computed', {
     input: { lat, lon, date: date.toISOString() },
     elapsedMs: Date.now() - startMs
   });

@@ -52,4 +52,57 @@ describe('Sun Arc Geometry', () => {
     expect(points[0].blocked).toBe(true);
     expect(points[1].blocked).toBe(false);
   });
+
+  it('empty samples array → empty points', () => {
+    const points = computeArcPoints([], 50);
+    expect(points.length).toBe(0);
+  });
+
+  it('all samples below -5° → empty points', () => {
+    const samples: SunSample[] = [
+      { date: new Date('2026-06-20T00:00:00Z'), azimuth: 0, altitude: -10, phase: 'night' },
+      { date: new Date('2026-06-20T01:00:00Z'), azimuth: 0, altitude: -20, phase: 'night' },
+      { date: new Date('2026-06-20T02:00:00Z'), azimuth: 0, altitude: -6, phase: 'night' },
+    ];
+    const points = computeArcPoints(samples, 50);
+    expect(points.length).toBe(0);
+  });
+
+  it('altitude exactly -5° is filtered out (altitude <= -5)', () => {
+    const samples: SunSample[] = [
+      { date: new Date('2026-06-20T00:00:00Z'), azimuth: 0, altitude: -5, phase: 'night' },
+    ];
+    const points = computeArcPoints(samples, 50);
+    expect(points.length).toBe(0);
+  });
+
+  it('altitude -4.9° is NOT filtered (above -5)', () => {
+    const samples: SunSample[] = [
+      { date: new Date('2026-06-20T00:00:00Z'), azimuth: 0, altitude: -4.9, phase: 'civil_twilight' },
+    ];
+    const points = computeArcPoints(samples, 50);
+    expect(points.length).toBe(1);
+  });
+
+  it('without sunHours, blocked is undefined on all points', () => {
+    const samples: SunSample[] = [
+      { date: new Date('2026-06-20T12:00:00Z'), azimuth: 180, altitude: 45, phase: 'day' },
+    ];
+    const points = computeArcPoints(samples, 50);
+    expect(points[0].blocked).toBeUndefined();
+  });
+
+  it('points preserve sample metadata (azimuth, altitude, phase, date)', () => {
+    const sample: SunSample = {
+      date: new Date('2026-06-20T12:00:00Z'),
+      azimuth: 180,
+      altitude: 60,
+      phase: 'day',
+    };
+    const points = computeArcPoints([sample], 50);
+    expect(points[0].azimuth).toBe(180);
+    expect(points[0].altitude).toBe(60);
+    expect(points[0].phase).toBe('day');
+    expect(points[0].date).toBe(sample.date);
+  });
 });

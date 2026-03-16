@@ -133,3 +133,75 @@ describe('integrateSunHours — arc segments', () => {
     }
   });
 });
+
+describe('integrateSunHours — empty and single sample', () => {
+  it('empty samples array → 0 hours, no segments', () => {
+    const mask = fullSkyMask();
+    const result = integrateSunHours(mask, []);
+    expect(result.totalHours).toBe(0);
+    expect(result.segments.length).toBe(0);
+    expect(result.maskIncomplete).toBe(false);
+  });
+
+  it('single above-horizon sample → 0 hours (no interval to span)', () => {
+    const samples: SunSample[] = [
+      { date: new Date(Date.UTC(2026, 5, 20, 12, 0, 0)), azimuth: 180, altitude: 45, phase: 'day' },
+    ];
+    const mask = fullSkyMask();
+    const result = integrateSunHours(mask, samples);
+    expect(result.totalHours).toBe(0);
+  });
+
+  it('all samples below horizon → 0 hours, no segments', () => {
+    const samples: SunSample[] = [
+      { date: new Date(Date.UTC(2026, 5, 20, 0, 0, 0)), azimuth: 0, altitude: -10, phase: 'night' },
+      { date: new Date(Date.UTC(2026, 5, 20, 1, 0, 0)), azimuth: 0, altitude: -5, phase: 'night' },
+      { date: new Date(Date.UTC(2026, 5, 20, 2, 0, 0)), azimuth: 0, altitude: -15, phase: 'night' },
+    ];
+    const mask = fullSkyMask();
+    const result = integrateSunHours(mask, samples);
+    expect(result.totalHours).toBe(0);
+    expect(result.segments.length).toBe(0);
+  });
+});
+
+describe('integrateSunHours — alternating blocked/unblocked', () => {
+  it('alternating creates multiple segments', () => {
+    const startMs = Date.UTC(2026, 5, 20, 8, 0, 0, 0);
+    const intervalMs = 5 * 60 * 1000;
+    // Alternate az: 90 (blocked in halfBlockedMask), 270 (sky), 90, 270, etc.
+    const samples: SunSample[] = [];
+    for (let i = 0; i < 8; i++) {
+      samples.push({
+        date: new Date(startMs + i * intervalMs),
+        azimuth: i % 2 === 0 ? 90 : 270,
+        altitude: 30,
+        phase: 'day',
+      });
+    }
+    const mask = halfBlockedMask();
+    const result = integrateSunHours(mask, samples);
+    // Should create multiple segments due to alternating blocked state
+    expect(result.segments.length).toBeGreaterThan(1);
+  });
+});
+
+describe('integrateSunHours — mixed obstruction types', () => {
+  it('different obstruction types on consecutive blocked samples create separate segments', () => {
+    let mask = createEmptySkyMask();
+    // Set az=80 as Building, az=100 as Tree
+    mask = setSkyMaskCell(mask, 80, 30, ObstructionType.Building, 1.0);
+    mask = setSkyMaskCell(mask, 100, 30, ObstructionType.Tree, 1.0);
+
+    const startMs = Date.UTC(2026, 5, 20, 10, 0, 0, 0);
+    const intervalMs = 5 * 60 * 1000;
+    const samples: SunSample[] = [
+      { date: new Date(startMs), azimuth: 80, altitude: 30, phase: 'day' },
+      { date: new Date(startMs + intervalMs), azimuth: 100, altitude: 30, phase: 'day' },
+    ];
+    const result = integrateSunHours(mask, samples);
+    // Both are blocked but with different obstruction types, so two segments
+    expect(result.segments.length).toBe(2);
+    expect(result.totalHours).toBe(0); // all blocked
+  });
+});

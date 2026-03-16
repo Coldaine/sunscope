@@ -62,4 +62,56 @@ describe('AR Coordinate Convert', () => {
       });
     });
   });
+
+  describe('solarToWorld — negative altitude (below horizon)', () => {
+    it('negative altitude produces y < 0', () => {
+      const pos = solarToWorld(180, -30, 50);
+      expect(pos.y).toBeLessThan(0);
+    });
+
+    it('altitude=-90 (nadir) puts point directly below', () => {
+      const pos = solarToWorld(0, -90, 50);
+      expect(pos.y).toBeCloseTo(-50);
+      expect(pos.x).toBeCloseTo(0);
+      expect(pos.z).toBeCloseTo(0);
+    });
+  });
+
+  describe('solarToWorld — default radius', () => {
+    it('default radius is 50 when not specified', () => {
+      const pos = solarToWorld(90, 0); // east at horizon
+      expect(pos.x).toBeCloseTo(50);
+    });
+  });
+
+  describe('solarToWorld — known value at 45°/45°', () => {
+    it('azimuth=45° altitude=45° radius=1 → known coordinates', () => {
+      const pos = solarToWorld(45, 45, 1);
+      // cos(45°) ≈ 0.7071, sin(45°) ≈ 0.7071
+      // x = cos(45°)*sin(45°) = 0.5
+      // y = sin(45°) ≈ 0.7071
+      // z = -cos(45°)*cos(45°) = -0.5
+      expect(pos.x).toBeCloseTo(0.5);
+      expect(pos.y).toBeCloseTo(Math.SQRT1_2);
+      expect(pos.z).toBeCloseTo(-0.5);
+    });
+  });
+
+  describe('worldToSolar — degenerate origin', () => {
+    it('(0,0,0) returns {0, 0} as fallback', () => {
+      const result = worldToSolar(0, 0, 0);
+      expect(result.azimuthDeg).toBe(0);
+      expect(result.altitudeDeg).toBe(0);
+    });
+  });
+
+  describe('solarToWorld — radius scaling', () => {
+    it('doubling radius doubles all coordinates', () => {
+      const p1 = solarToWorld(135, 30, 10);
+      const p2 = solarToWorld(135, 30, 20);
+      expect(p2.x).toBeCloseTo(p1.x * 2);
+      expect(p2.y).toBeCloseTo(p1.y * 2);
+      expect(p2.z).toBeCloseTo(p1.z * 2);
+    });
+  });
 });

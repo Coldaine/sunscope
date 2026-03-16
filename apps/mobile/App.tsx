@@ -3,6 +3,9 @@
  * @description SunScope mobile app entry point
  */
 
+// TODO: Initialize a DefaultLogger from @sunscope/core and pass it down via React context
+// when real features are integrated.
+
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';

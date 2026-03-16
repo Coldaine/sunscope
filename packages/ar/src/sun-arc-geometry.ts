@@ -1,4 +1,4 @@
-import { SunSample, SunHoursResult } from '@sunscope/core';
+import { SunSample, SunHoursResult, Logger, DefaultLogger } from '@sunscope/core';
 import { solarToWorld } from './ar-coordinate-convert';
 import { ArcPoint3D } from './types';
 
@@ -7,13 +7,17 @@ import { ArcPoint3D } from './types';
  * @param samples Array of sun positions
  * @param radius Radius of the AR arc (meters)
  * @param sunHours Optional result to color points as blocked/unblocked
+ * @param log Optional logger
  * @returns Array of AR 3D points
  */
 export function computeArcPoints(
   samples: SunSample[],
   radius: number = 50,
-  sunHours?: SunHoursResult
+  sunHours?: SunHoursResult,
+  log?: Logger
 ): ArcPoint3D[] {
+  const l = log ?? new DefaultLogger('sun-arc-geometry');
+  const start = Date.now();
   let filteredCount = 0;
   let maxX = -Infinity, minX = Infinity;
   let maxY = -Infinity, minY = Infinity;
@@ -54,15 +58,13 @@ export function computeArcPoints(
     maxZ = Math.max(maxZ, z); minZ = Math.min(minZ, z);
   }
 
-  // TODO: Add structured logging
-  /*
-  logger.debug('computeArcPoints', {
+  l.debug('computeArcPoints complete', {
     inputCount: samples.length,
     outputCount: points.length,
     filteredCount,
-    bounds: { maxX, minX, maxY, minY, maxZ, minZ }
+    bounds: { maxX, minX, maxY, minY, maxZ, minZ },
+    elapsedMs: Date.now() - start,
   });
-  */
 
   return points;
 }

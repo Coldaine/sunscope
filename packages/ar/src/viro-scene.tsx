@@ -12,6 +12,9 @@
  *   See TODO.md for known compatibility gaps.
  */
 
+// TODO: Accept an optional Logger via props (or React context) for structured logging
+// of segment-building stats during render.
+
 import React from 'react';
 // @ts-ignore – ViroReact doesn't ship TS types for all components; see __mocks__ for Jest
 import { ViroARScene, ViroPolyline } from '@reactvision/react-viro';

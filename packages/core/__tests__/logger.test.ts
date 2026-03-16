@@ -83,4 +83,46 @@ describe('DefaultLogger', () => {
     expect(() => log.warn('test')).not.toThrow();
     expect(() => log.error('test')).not.toThrow();
   });
+
+  it('respects minLevel — INFO level suppresses DEBUG', () => {
+    const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const log = new DefaultLogger('test', 'INFO');
+    log.debug('should be suppressed');
+    expect(stderrSpy).not.toHaveBeenCalled();
+    log.info('should be emitted');
+    expect(stderrSpy).toHaveBeenCalledTimes(1);
+    stderrSpy.mockRestore();
+  });
+
+  it('writes structured JSON to stderr', () => {
+    const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const log = new DefaultLogger('json-test');
+    log.info('hello', { key: 42 });
+    expect(stderrSpy).toHaveBeenCalledTimes(1);
+    const written = (stderrSpy.mock.calls[0][0] as string).trim();
+    const parsed = JSON.parse(written);
+    expect(parsed.module).toBe('json-test');
+    expect(parsed.level).toBe('INFO');
+    expect(parsed.message).toBe('hello');
+    expect(parsed.data.key).toBe(42);
+    stderrSpy.mockRestore();
+  });
+});
+
+describe('TestLogger — defaults', () => {
+  it('default module name is "test"', () => {
+    const log = new TestLogger();
+    log.info('x');
+    expect(log.entries[0].module).toBe('test');
+  });
+
+  it('entries preserve insertion order', () => {
+    const log = new TestLogger();
+    log.info('first');
+    log.warn('second');
+    log.error('third');
+    expect(log.entries[0].message).toBe('first');
+    expect(log.entries[1].message).toBe('second');
+    expect(log.entries[2].message).toBe('third');
+  });
 });

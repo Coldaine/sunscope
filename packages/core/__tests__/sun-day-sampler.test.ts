@@ -91,6 +91,51 @@ describe('sampleSunDay — custom interval', () => {
   });
 });
 
+describe('sampleSunDay — phase distribution', () => {
+  it('samples contain multiple distinct phases for a full day', () => {
+    const samples = sampleSunDay(LAT, LON, new Date('2026-06-21T00:00:00Z'), {
+      log: new TestLogger(),
+    });
+    const phases = new Set(samples.map(s => s.phase));
+    // A full day should have at least day and night
+    expect(phases.has('day')).toBe(true);
+    expect(phases.has('night')).toBe(true);
+    expect(phases.size).toBeGreaterThanOrEqual(3); // day, night, + at least one twilight/golden
+  });
+});
+
+describe('sampleSunDay — mid-day anchor', () => {
+  it('passing a mid-day date still anchors to UTC midnight', () => {
+    const midDay = new Date('2026-06-21T15:30:00Z');
+    const samples = sampleSunDay(LAT, LON, midDay, { log: new TestLogger() });
+    // First sample should be at 00:00 UTC on June 21
+    expect(samples[0].date.getUTCHours()).toBe(0);
+    expect(samples[0].date.getUTCMinutes()).toBe(0);
+    expect(samples[0].date.getUTCDate()).toBe(21);
+  });
+});
+
+describe('sampleSunDay — winter vs summer', () => {
+  it('winter solstice has fewer above-horizon samples than summer', () => {
+    const log = new TestLogger();
+    const summer = sampleSunDay(LAT, LON, new Date('2026-06-21T00:00:00Z'), { log });
+    const winter = sampleSunDay(LAT, LON, new Date('2026-12-21T00:00:00Z'), { log });
+    const summerAbove = summer.filter(s => s.altitude > 0).length;
+    const winterAbove = winter.filter(s => s.altitude > 0).length;
+    expect(summerAbove).toBeGreaterThan(winterAbove);
+  });
+});
+
+describe('sampleSunDay — logging', () => {
+  it('logs completion info entry', () => {
+    const log = new TestLogger();
+    sampleSunDay(LAT, LON, new Date('2026-06-21T00:00:00Z'), { log });
+    expect(log.at('INFO')).toContainEqual(
+      expect.objectContaining({ message: 'sampleSunDay complete' })
+    );
+  });
+});
+
 describe('sampleSunDay — performance', () => {
   it('288 samples complete in under 200ms', () => {
     const t0 = Date.now();

@@ -58,3 +58,29 @@ describe('DeepLabV3Classifier', () => {
     );
   });
 });
+
+describe('MockSkyClassifier — edge cases', () => {
+  it('1x1 frame produces 1x1 grid', async () => {
+    const clf = new MockSkyClassifier();
+    const grid = await clf.classifyFrame(new Uint8Array(1), 1, 1);
+    expect(grid.length).toBe(1);
+    expect(grid[0].length).toBe(1);
+    expect(grid[0][0]).toBe(ObstructionType.Sky);
+  });
+
+  it('every ObstructionType can be used as mock type', async () => {
+    for (const type of Object.values(ObstructionType)) {
+      const clf = new MockSkyClassifier(type as ObstructionType);
+      const grid = await clf.classifyFrame(new Uint8Array(1), 1, 1);
+      expect(grid[0][0]).toBe(type);
+    }
+  });
+
+  it('large frame dimensions produce correct grid', async () => {
+    const clf = new MockSkyClassifier(ObstructionType.Fence);
+    const grid = await clf.classifyFrame(new Uint8Array(100 * 50), 100, 50);
+    expect(grid.length).toBe(50);
+    expect(grid[0].length).toBe(100);
+    expect(grid[49][99]).toBe(ObstructionType.Fence);
+  });
+});

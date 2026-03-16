@@ -130,4 +130,61 @@ describe('stitchFrame — edge cases', () => {
     // Should return original unchanged (or an equivalent empty mask)
     expect(getMaskCoverage(result)).toBe(0);
   });
+
+  it('1x1 pixel grid triggers divide-by-zero in projection (known edge case)', async () => {
+    // BUG: stitchFrame computes px/(width-1) which is 0/0 = NaN for a 1x1 grid.
+    // setSkyMaskCell then tries to index with NaN, causing a TypeError.
+    // This documents the known limitation — real camera frames are never 1x1.
+    const clf = new MockSkyClassifier(ObstructionType.Tree);
+    const pixelGrid = await clf.classifyFrame(new Uint8Array(1), 1, 1);
+    const frame: ScanFrame = {
+      timestamp: new Date('2026-06-20T12:00:00Z'),
+      deviceAzimuth: 90,
+      deviceElevation: 45,
+      deviceRoll: 0,
+      fieldOfViewH: 10,
+      fieldOfViewV: 10,
+      pixelClassifications: pixelGrid,
+    };
+    const mask = createEmptySkyMask();
+    expect(() => stitchFrame(mask, frame)).toThrow();
+  });
+});
+
+describe('stitchFrame — north wrapping', () => {
+  it('frame at azimuth 0° (north) stitches correctly', async () => {
+    const frame = await buildFrame(0, 45, ObstructionType.Sky);
+    const mask = createEmptySkyMask();
+    const newMask = stitchFrame(mask, frame);
+    const cell = getSkyMaskCell(newMask, 0, 45);
+    expect(cell.classification).toBe(ObstructionType.Sky);
+  });
+
+  it('frame at azimuth 355° wraps across north boundary', async () => {
+    const frame = await buildFrame(355, 45, ObstructionType.Building, 20, 10);
+    const mask = createEmptySkyMask();
+    const newMask = stitchFrame(mask, frame);
+    // Some cells near 355-5° should be updated
+    const coverage = getMaskCoverage(newMask);
+    expect(coverage).toBeGreaterThan(0);
+  });
+});
+
+describe('stitchFrame — coverage accumulation', () => {
+  it('non-overlapping frames accumulate coverage', async () => {
+    let mask = createEmptySkyMask();
+    const frame1 = await buildFrame(45, 30, ObstructionType.Sky);
+    const frame2 = await buildFrame(135, 30, ObstructionType.Sky);
+    const frame3 = await buildFrame(225, 60, ObstructionType.Sky);
+
+    mask = stitchFrame(mask, frame1);
+    const c1 = getMaskCoverage(mask);
+    mask = stitchFrame(mask, frame2);
+    const c2 = getMaskCoverage(mask);
+    mask = stitchFrame(mask, frame3);
+    const c3 = getMaskCoverage(mask);
+
+    expect(c2).toBeGreaterThan(c1);
+    expect(c3).toBeGreaterThan(c2);
+  });
 });
