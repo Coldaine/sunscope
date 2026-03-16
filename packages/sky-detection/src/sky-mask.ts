@@ -177,11 +177,13 @@ export function setSkyMaskCell(
   elevationDeg: number,
   classification: ObstructionType,
   confidence: number,
-  logger?: ILogger
+  logger?: ILogger,
+  timestamp?: Date
 ): SkyMask {
   const startTime = Date.now();
   const azBucket = azimuthToBucket(azimuthDeg);
   const elBucket = elevationToBucket(elevationDeg);
+  const updateTime = timestamp || new Date();
   
   // Create deep copy of grid (immutable update)
   const newGrid: SkyMaskCell[][] = mask.grid.map((azRow, azIndex) => {
@@ -197,7 +199,7 @@ export function setSkyMaskCell(
       return {
         classification,
         confidence: Math.max(0, Math.min(1, confidence)),
-        lastUpdated: new Date()
+        lastUpdated: updateTime
       };
     });
   });
@@ -206,7 +208,7 @@ export function setSkyMaskCell(
     grid: newGrid,
     metadata: {
       ...mask.metadata,
-      lastUpdated: new Date()
+      lastUpdated: updateTime
     }
   };
   

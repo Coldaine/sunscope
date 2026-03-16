@@ -19,7 +19,8 @@ import {
 
 import {
   createEmptySkyMask,
-  getSkyMaskCell
+  getSkyMaskCell,
+  setSkyMaskCell
 } from '../src/sky-mask';
 
 import {
@@ -339,7 +340,7 @@ describe('R-SKY-002: Hemisphere Stitcher', () => {
       const mask = createEmptySkyMask(logger);
       logger.clear();
 
-      // First frame: everything is Sky
+      // First frame: everything is Sky (10 seconds ago)
       const frame1 = createScanFrame({
         deviceAzimuth: 0,
         deviceElevation: 0,
@@ -353,7 +354,8 @@ describe('R-SKY-002: Hemisphere Stitcher', () => {
             [ObstructionType.Sky, ObstructionType.Sky],
             [ObstructionType.Sky, ObstructionType.Sky]
           ]
-        }
+        },
+        timestamp: new Date(Date.now() - 10000) // 10 seconds ago
       });
 
       // For 2x2 grid with 60° FOV: each pixel = 30°
@@ -363,7 +365,7 @@ describe('R-SKY-002: Hemisphere Stitcher', () => {
       const cellAfterFirst = getSkyMaskCell(updatedMask, 345, 15, logger);
       expect(cellAfterFirst.classification).toBe(ObstructionType.Sky);
 
-      // Second frame: center is Building (overlaps first frame)
+      // Second frame: center is Building (now) - newer, so should win
       const frame2 = createScanFrame({
         deviceAzimuth: 0,
         deviceElevation: 0,
@@ -383,8 +385,103 @@ describe('R-SKY-002: Hemisphere Stitcher', () => {
       updatedMask = stitchFrame(updatedMask, frame2, logger);
       const cellAfterSecond = getSkyMaskCell(updatedMask, 345, 15, logger);
 
-      // Should be Building (last write wins)
+      // Should be Building (newer frame wins)
       expect(cellAfterSecond.classification).toBe(ObstructionType.Building);
+    });
+
+    it('should use higher confidence when timestamps are similar', async () => {
+      // For 2x2 grid with 60° FOV, pixels project to:
+      // 0,0: az=345, el=15 | 1,0: az=15, el=15
+      // 0,1: az=345, el=0  | 1,1: az=15, el=0
+      const baseTime = new Date();
+      let mask = createEmptySkyMask(logger);
+      
+      // Pre-set cell at az=15, el=0 with low confidence (pixel 1,1 location)
+      mask = setSkyMaskCell(mask, 15, 0, ObstructionType.Building, 0.5, logger, baseTime);
+      logger.clear();
+
+      const cellBefore = getSkyMaskCell(mask, 15, 0, logger);
+      expect(cellBefore.classification).toBe(ObstructionType.Building);
+      expect(cellBefore.confidence).toBe(0.5);
+
+      // Frame with Sky at all pixels - pixel 1,1 will hit az=15, el=0
+      const frame = createScanFrame({
+        deviceAzimuth: 0,
+        deviceElevation: 0,
+        deviceRoll: 0,
+        fieldOfViewH: 60,
+        fieldOfViewV: 60,
+        pixelClassifications: {
+          width: 2,
+          height: 2,
+          data: [
+            [ObstructionType.Sky, ObstructionType.Sky],
+            [ObstructionType.Sky, ObstructionType.Sky]
+          ]
+        },
+        timestamp: new Date(baseTime.getTime() + 100) // 100ms later (< 5s)
+      });
+
+      // Pixel 1,1 confidence: dx=(1-0.5)/1=0.5, dy=(1-0.5)/1=0.5
+      // distance=sqrt(0.5)=0.707, confidence=max(0.5, 1-0.707*0.5)=0.646
+      // This is > 0.5, so should update
+      mask = stitchFrame(mask, frame, logger);
+      const cellAfter = getSkyMaskCell(mask, 15, 0, logger);
+
+      // Higher confidence wins when timestamps are close
+      expect(cellAfter.classification).toBe(ObstructionType.Sky);
+      expect(cellAfter.confidence).toBeGreaterThan(0.5);
+    });
+
+    it('should not overwrite with older frame', () => {
+      const mask = createEmptySkyMask(logger);
+      logger.clear();
+
+      const now = new Date();
+
+      // First frame: Sky (now)
+      const frame1 = createScanFrame({
+        deviceAzimuth: 0,
+        deviceElevation: 0,
+        deviceRoll: 0,
+        fieldOfViewH: 60,
+        fieldOfViewV: 60,
+        pixelClassifications: {
+          width: 2,
+          height: 2,
+          data: [
+            [ObstructionType.Sky, ObstructionType.Sky],
+            [ObstructionType.Sky, ObstructionType.Sky]
+          ]
+        },
+        timestamp: now
+      });
+
+      let updatedMask = stitchFrame(mask, frame1, logger);
+
+      // Second frame: Building (10 seconds ago) - older, should not overwrite
+      const frame2 = createScanFrame({
+        deviceAzimuth: 0,
+        deviceElevation: 0,
+        deviceRoll: 0,
+        fieldOfViewH: 60,
+        fieldOfViewV: 60,
+        pixelClassifications: {
+          width: 2,
+          height: 2,
+          data: [
+            [ObstructionType.Building, ObstructionType.Building],
+            [ObstructionType.Building, ObstructionType.Building]
+          ]
+        },
+        timestamp: new Date(now.getTime() - 10000) // 10 seconds ago
+      });
+
+      updatedMask = stitchFrame(updatedMask, frame2, logger);
+      const cell = getSkyMaskCell(updatedMask, 345, 15, logger);
+
+      // Should still be Sky (older frame doesn't overwrite)
+      expect(cell.classification).toBe(ObstructionType.Sky);
     });
 
     it('should handle multiple frames at different orientations', () => {

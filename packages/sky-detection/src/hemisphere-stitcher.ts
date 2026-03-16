@@ -26,6 +26,7 @@ import {
 
 import {
   setSkyMaskCell,
+  getSkyMaskCell,
   normalizeDegrees,
   clampElevation
 } from './sky-mask';
@@ -179,6 +180,47 @@ export function pixelToSpherical(params: PixelProjectionParams): SphericalCoords
 }
 
 /**
+ * Determine if we should write to a cell based on conflict resolution rules
+ * 
+ * Rules (in order of priority):
+ * 1. If cell is Unknown/never written, always write
+ * 2. If frame timestamp is newer than cell timestamp, write (newer wins)
+ * 3. If timestamps are within 5 seconds, higher confidence wins
+ * 4. Otherwise, keep existing
+ * 
+ * @param existingCell - Current cell in the mask
+ * @param newConfidence - Confidence of new measurement
+ * @param frameTimestamp - Timestamp of the frame being stitched
+ * @returns true if should write
+ */
+function shouldWriteCell(
+  existingCell: import('./types').SkyMaskCell,
+  newConfidence: number,
+  frameTimestamp: Date
+): boolean {
+  // Rule 1: Never written or Unknown
+  if (existingCell.classification === ObstructionType.Unknown || !existingCell.lastUpdated) {
+    return true;
+  }
+
+  const timeDiffMs = frameTimestamp.getTime() - existingCell.lastUpdated.getTime();
+  const FIVE_SECONDS = 5000;
+
+  // Rule 2: Frame is significantly newer (> 5 seconds)
+  if (timeDiffMs > FIVE_SECONDS) {
+    return true;
+  }
+
+  // Rule 3: Similar timestamps, higher confidence wins
+  if (Math.abs(timeDiffMs) <= FIVE_SECONDS) {
+    return newConfidence > existingCell.confidence;
+  }
+
+  // Rule 4: Frame is older, keep existing
+  return false;
+}
+
+/**
  * Calculate confidence based on pixel position
  * Center pixels are more reliable (less lens distortion)
  * @param pixelX - Pixel X coordinate
@@ -290,18 +332,25 @@ export function stitchFrame(
       // Calculate confidence based on pixel position
       const confidence = calculatePixelConfidence(x, y, width, height);
 
-      // Update the sky mask cell
-      currentMask = setSkyMaskCell(
-        currentMask,
-        coords.azimuth,
-        coords.elevation,
-        classification,
-        confidence,
-        logger
-      );
+      // Check existing cell for conflict resolution
+      const existingCell = getSkyMaskCell(currentMask, coords.azimuth, coords.elevation);
+      const shouldUpdate = shouldWriteCell(existingCell, confidence, frame.timestamp);
+
+      if (shouldUpdate) {
+        // Update the sky mask cell with frame timestamp
+        currentMask = setSkyMaskCell(
+          currentMask,
+          coords.azimuth,
+          coords.elevation,
+          classification,
+          confidence,
+          logger,
+          frame.timestamp
+        );
+        cellsUpdated++;
+      }
 
       pixelsProcessed++;
-      cellsUpdated++;
     }
   }
 
@@ -317,6 +366,7 @@ export function stitchFrame(
     pixelsProcessed,
     pixelsSkipped,
     cellsUpdated,
+    conflictsResolved: pixelsProcessed - pixelsSkipped - cellsUpdated,
     elapsedMs
   });
 
