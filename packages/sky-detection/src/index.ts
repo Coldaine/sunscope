@@ -16,4 +16,4 @@ export * from './hemisphere-stitcher';
 export * from './arc-integrator';
 
 // Sky classifier (R-SKY-004)
-// export * from './sky-classifier';
+export * from './sky-classifier';
