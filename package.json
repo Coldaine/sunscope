@@ -1,0 +1,26 @@
+{
+  "name": "sunscope",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SunScope - Sun tracking app for iOS",
+  "scripts": {
+    "test": "turbo test",
+    "test:core": "cd packages/core && pnpm test",
+    "test:ar": "cd packages/ar && pnpm test",
+    "test:sky": "cd packages/sky-detection && pnpm test",
+    "test:ui": "cd packages/ui && pnpm test",
+    "dev": "cd apps/mobile && pnpm start",
+    "dev:web": "cd apps/mobile && pnpm start --web",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "turbo": "2.0.14",
+    "typescript": "5.5.4"
+  },
+  "packageManager": "pnpm@9.12.3",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
