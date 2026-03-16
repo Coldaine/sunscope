@@ -78,8 +78,12 @@ export function elevationToBucket(elevationDeg: number): number {
  * @param bucket - Bucket index
  * @param resolution - Resolution in degrees
  * @returns Center angle in degrees
+ * @throws Error if bucket is negative
  */
 export function bucketToAngle(bucket: number, resolution: number): number {
+  if (bucket < 0) {
+    throw new Error(`Bucket index must be non-negative, got ${bucket}`);
+  }
   return bucket * resolution + resolution / 2;
 }
 

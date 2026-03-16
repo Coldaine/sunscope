@@ -197,6 +197,10 @@ describe('R-SKY-001: Sky mask data structure', () => {
     it('should work with elevation resolution', () => {
       expect(bucketToAngle(22, 2)).toBe(45);
     });
+
+    it('should throw for negative bucket index', () => {
+      expect(() => bucketToAngle(-1, 2)).toThrow('Bucket index must be non-negative');
+    });
   });
 
   describe('createEmptyCell', () => {
