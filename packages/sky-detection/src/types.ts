@@ -131,9 +131,10 @@ export interface SkyClassifier {
    * @param imageData - Raw image data (e.g., Uint8Array from camera)
    * @param width - Image width in pixels
    * @param height - Image height in pixels
+   * @param logger - Optional logger for debugging
    * @returns Promise resolving to pixel classifications
    */
-  classifyFrame(imageData: Uint8Array, width: number, height: number): Promise<PixelGrid>;
+  classifyFrame(imageData: Uint8Array, width: number, height: number, logger?: import('@sunscope/core').ILogger): Promise<PixelGrid>;
 }
 
 /**
