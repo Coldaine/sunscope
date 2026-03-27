@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "SunScope",
+    "slug": "sunscope",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "xyz.moosegoose.sunscope",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "SunScope uses your location to calculate solar position and sun paths."
+      }
+    },
+    "web": {
+      "output": "single"
+    }
+  }
+}

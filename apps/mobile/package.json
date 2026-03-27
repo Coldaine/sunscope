@@ -1,0 +1,25 @@
+{
+  "name": "@sunscope/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "test": "jest --config jest.config.cjs --runInBand",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@sunscope/ar": "workspace:*",
+    "@sunscope/core": "workspace:*",
+    "@sunscope/sky-detection": "workspace:*",
+    "@sunscope/ui": "workspace:*",
+    "expo": "55.0.6",
+    "expo-location": "55.1.2",
+    "expo-status-bar": "55.0.4",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.2",
+    "react-native-svg": "15.15.3",
+    "react-native-web": "0.21.0"
+  }
+}

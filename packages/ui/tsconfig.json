@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@sunscope/core": ["../core/src/index.ts"],
+      "@sunscope/ar": ["../ar/src/index.ts"]
+    }
+  },
+  "include": ["src", "__tests__"]
+}

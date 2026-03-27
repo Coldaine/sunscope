@@ -1,0 +1,50 @@
+{
+  "source": {
+    "tableUrl": "https://gml.noaa.gov/grad/solcalc/table.php?lat=36.3048&lon=-86.5974&year=2026",
+    "sunriseUrl": "https://gml.noaa.gov/grad/solcalc/sunrise.html",
+    "azelUrl": "https://gml.noaa.gov/grad/solcalc/azel.html"
+  },
+  "location": {
+    "name": "Hendersonville, TN",
+    "latitude": 36.3048,
+    "longitude": -86.5974,
+    "timezone": "America/Chicago"
+  },
+  "referenceDates": {
+    "2026-03-16": {
+      "sunrise": "2026-03-16T11:55:37.975Z",
+      "sunset": "2026-03-16T23:54:46.870Z",
+      "solarNoon": "2026-03-16T17:55:03.578Z",
+      "solarNoonAzimuth": 180.05,
+      "solarNoonAltitude": 52.18
+    },
+    "2026-03-20": {
+      "sunrise": "2026-03-20T11:49:49.550Z",
+      "sunset": "2026-03-20T23:58:15.687Z",
+      "solarNoon": "2026-03-20T17:53:53.868Z",
+      "solarNoonAzimuth": 180.05,
+      "solarNoonAltitude": 53.76
+    },
+    "2026-06-20": {
+      "sunrise": "2026-06-20T10:28:55.785Z",
+      "sunset": "2026-06-21T01:07:10.647Z",
+      "solarNoon": "2026-06-20T17:47:56.395Z",
+      "solarNoonAzimuth": 179.88,
+      "solarNoonAltitude": 77.13
+    },
+    "2026-09-22": {
+      "sunrise": "2026-09-22T11:34:24.032Z",
+      "sunset": "2026-09-22T23:43:06.724Z",
+      "solarNoon": "2026-09-22T17:39:13.332Z",
+      "solarNoonAzimuth": 180.07,
+      "solarNoonAltitude": 53.81
+    },
+    "2026-12-21": {
+      "sunrise": "2026-12-21T12:54:02.243Z",
+      "sunset": "2026-12-21T22:35:07.898Z",
+      "solarNoon": "2026-12-21T17:44:20.244Z",
+      "solarNoonAzimuth": 179.93,
+      "solarNoonAltitude": 30.28
+    }
+  }
+}
