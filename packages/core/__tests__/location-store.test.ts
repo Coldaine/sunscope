@@ -62,7 +62,7 @@ describe('validateLocation', () => {
     expect(entry?.data).not.toHaveProperty('lon');
   });
 
-  it('logs validation errors without raw coordinate fields', () => {
+  it('logs validation errors without raw coordinate fields or values', () => {
     const l = new TestLogger();
     expect(() => validateLocation({ lat: 91, lon: 0 }, l)).toThrow(LocationValidationError);
     const entry = l.entries.find((e) => e.level === 'ERROR' && e.message.startsWith('Invalid latitude'));
@@ -70,6 +70,7 @@ describe('validateLocation', () => {
     expect(entry?.data).toEqual(expect.objectContaining({ coordinatesRedacted: true, axis: 'latitude' }));
     expect(entry?.data).not.toHaveProperty('lat');
     expect(entry?.data).not.toHaveProperty('lon');
+    expect(entry?.message).not.toContain('91');
   });
 });
 
@@ -123,22 +124,12 @@ describe('serializeLocation / deserializeLocation round-trip', () => {
 });
 
 describe('validateLocation — error messages', () => {
-  it('error message contains the invalid latitude value', () => {
-    try {
-      validateLocation({ lat: 100, lon: 0 });
-      fail('expected to throw');
-    } catch (e: any) {
-      expect(e.message).toContain('100');
-    }
+  it('latitude error message omits raw coordinate value', () => {
+    expect(() => validateLocation({ lat: 100, lon: 0 })).toThrow('Invalid latitude: must be in [-90, 90]');
   });
 
-  it('error message contains the invalid longitude value', () => {
-    try {
-      validateLocation({ lat: 0, lon: 200 });
-      fail('expected to throw');
-    } catch (e: any) {
-      expect(e.message).toContain('200');
-    }
+  it('longitude error message omits raw coordinate value', () => {
+    expect(() => validateLocation({ lat: 0, lon: 200 })).toThrow('Invalid longitude: must be in [-180, 180]');
   });
 
   it('error is instance of LocationValidationError', () => {
