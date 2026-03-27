@@ -3,6 +3,13 @@ import { Logger, DefaultLogger } from './logger';
 import { suncalcToCompass, radToDeg } from './solar-convert';
 import { SunPosition, SunTimes } from './core-types';
 
+function summarizeInput(date: Date): Record<string, unknown> {
+  return {
+    date: date.toISOString(),
+    coordinatesRedacted: true,
+  };
+}
+
 /**
  * Gets sun position at a given time and location using suncalc,
  * returning angles adhering to app conventions (degrees, north-origin).
@@ -27,7 +34,7 @@ export function getSunPosition(lat: number, lon: number, date: Date, log?: Logge
   };
 
   l.debug('getSunPosition computed', {
-    input: { lat, lon, date: date.toISOString() },
+    input: summarizeInput(date),
     rawOutput: { azimuth: rawPos.azimuth, altitude: rawPos.altitude },
     convertedOutput: result,
     elapsedMs: Date.now() - startMs
@@ -52,7 +59,7 @@ export function getSunTimes(lat: number, lon: number, date: Date, log?: Logger):
   const rawTimes = suncalc.getTimes(date, lat, lon);
   
   l.debug('getSunTimes computed', {
-    input: { lat, lon, date: date.toISOString() },
+    input: summarizeInput(date),
     elapsedMs: Date.now() - startMs
   });
   

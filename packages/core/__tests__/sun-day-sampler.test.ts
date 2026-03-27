@@ -130,9 +130,16 @@ describe('sampleSunDay — logging', () => {
   it('logs completion info entry', () => {
     const log = new TestLogger();
     sampleSunDay(LAT, LON, new Date('2026-06-21T00:00:00Z'), { log });
-    expect(log.at('INFO')).toContainEqual(
-      expect.objectContaining({ message: 'sampleSunDay complete' })
-    );
+    const entry = log.at('INFO').find((e) => e.message === 'sampleSunDay complete');
+    expect(entry).toBeDefined();
+    expect(entry?.data).toEqual(expect.objectContaining({
+      day: '2026-06-21T00:00:00.000Z',
+      totalSamples: 288,
+      intervalMinutes: 5,
+      coordinatesRedacted: true,
+    }));
+    expect(entry?.data).not.toHaveProperty('lat');
+    expect(entry?.data).not.toHaveProperty('lon');
   });
 });
 

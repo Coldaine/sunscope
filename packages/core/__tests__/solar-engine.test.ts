@@ -21,6 +21,7 @@
  */
 
 import { getSunPosition, getSunTimes } from '../src/solar-engine';
+import { TestLogger } from '../src/logger';
 
 const LAT = 36.3048;
 const LON = -86.5974;
@@ -179,6 +180,34 @@ describe('getSunTimes — field ordering invariants', () => {
   });
 });
 
+describe('getSunPosition / getSunTimes — logging privacy', () => {
+  it('redacts coordinates from getSunPosition logs', () => {
+    const log = new TestLogger('solar-engine');
+    getSunPosition(LAT, LON, new Date('2026-06-21T12:00:00Z'), log);
+    const entry = log.entries.find((e) => e.message === 'getSunPosition computed');
+    expect(entry).toBeDefined();
+    expect(entry?.data?.input).toEqual(expect.objectContaining({
+      date: '2026-06-21T12:00:00.000Z',
+      coordinatesRedacted: true,
+    }));
+    expect(entry?.data?.input).not.toHaveProperty('lat');
+    expect(entry?.data?.input).not.toHaveProperty('lon');
+  });
+
+  it('redacts coordinates from getSunTimes logs', () => {
+    const log = new TestLogger('solar-engine');
+    getSunTimes(LAT, LON, new Date('2026-06-21T12:00:00Z'), log);
+    const entry = log.entries.find((e) => e.message === 'getSunTimes computed');
+    expect(entry).toBeDefined();
+    expect(entry?.data?.input).toEqual(expect.objectContaining({
+      date: '2026-06-21T12:00:00.000Z',
+      coordinatesRedacted: true,
+    }));
+    expect(entry?.data?.input).not.toHaveProperty('lat');
+    expect(entry?.data?.input).not.toHaveProperty('lon');
+  });
+});
+
 describe('getSunPosition — other latitudes', () => {
   it('equator near March equinox: noon altitude ≈ 90°', () => {
     // At the equator on equinox, sun passes nearly overhead
@@ -196,4 +225,3 @@ describe('getSunPosition — other latitudes', () => {
     expect(az < 45 || az > 315).toBe(true);
   });
 });
-
