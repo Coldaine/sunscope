@@ -55,7 +55,21 @@ describe('validateLocation', () => {
   it('logs validation debug entry on success', () => {
     const l = new TestLogger();
     validateLocation({ lat: 0, lon: 0 }, l);
-    expect(l.entries).toContainEqual(expect.objectContaining({ level: 'DEBUG' }));
+    const entry = l.entries.find((e) => e.level === 'DEBUG' && e.message === 'Location validated');
+    expect(entry).toBeDefined();
+    expect(entry?.data).toEqual(expect.objectContaining({ coordinatesRedacted: true }));
+    expect(entry?.data).not.toHaveProperty('lat');
+    expect(entry?.data).not.toHaveProperty('lon');
+  });
+
+  it('logs validation errors without raw coordinate fields', () => {
+    const l = new TestLogger();
+    expect(() => validateLocation({ lat: 91, lon: 0 }, l)).toThrow(LocationValidationError);
+    const entry = l.entries.find((e) => e.level === 'ERROR' && e.message.startsWith('Invalid latitude'));
+    expect(entry).toBeDefined();
+    expect(entry?.data).toEqual(expect.objectContaining({ coordinatesRedacted: true, axis: 'latitude' }));
+    expect(entry?.data).not.toHaveProperty('lat');
+    expect(entry?.data).not.toHaveProperty('lon');
   });
 });
 

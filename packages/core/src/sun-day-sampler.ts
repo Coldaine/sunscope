@@ -69,10 +69,10 @@ export function sampleSunDay(
 
   const elapsedMs = Date.now() - start;
   log.info('sampleSunDay complete', {
-    lat, lon,
     day: new Date(anchor).toISOString(),
     totalSamples: samples.length,
     intervalMinutes,
+    coordinatesRedacted: true,
     elapsedMs,
   });
 

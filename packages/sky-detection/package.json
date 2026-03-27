@@ -4,6 +4,7 @@
   "description": "Sky mask data structure and processing for SunScope",
   "main": "src/index.ts",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "build": "tsc",
     "test": "jest",
     "lint": "eslint src/"

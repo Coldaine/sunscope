@@ -38,15 +38,15 @@ export const DEFAULT_LOCATION: Location = {
 export function validateLocation(loc: Location, log: Logger = new DefaultLogger('location-store')): Location {
   if (loc.lat < -90 || loc.lat > 90) {
     const msg = `Invalid latitude ${loc.lat}: must be in [-90, 90]`;
-    log.error(msg, { lat: loc.lat });
+    log.error(msg, { coordinatesRedacted: true, axis: 'latitude' });
     throw new LocationValidationError(msg);
   }
   if (loc.lon < -180 || loc.lon > 180) {
     const msg = `Invalid longitude ${loc.lon}: must be in [-180, 180]`;
-    log.error(msg, { lon: loc.lon });
+    log.error(msg, { coordinatesRedacted: true, axis: 'longitude' });
     throw new LocationValidationError(msg);
   }
-  log.debug('Location validated', { lat: loc.lat, lon: loc.lon });
+  log.debug('Location validated', { coordinatesRedacted: true });
   return loc;
 }
 

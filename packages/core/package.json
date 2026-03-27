@@ -4,6 +4,7 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "build": "tsc",
     "test": "jest"
   },
