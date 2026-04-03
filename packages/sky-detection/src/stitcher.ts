@@ -2,7 +2,7 @@
  * @module stitcher
  * @description Hemisphere stitcher: projects classified camera frames onto the spherical sky mask.
  *
- * Dependencies: sky-mask (SkyMask, setSkyMaskCell, getMaskCoverage)
+ * Dependencies: sky-mask (SkyMask, setSkyMaskCell, getMaskCoverage, getSkyMaskCell)
  * Conventions:
  *   - Azimuth is compass degrees (north-origin, 0–360)
  *   - Elevation is degrees above horizon (0–90)
@@ -13,11 +13,16 @@
  *   pixelAzimuth   = deviceAzimuth   + (px / (width  - 1) - 0.5) * fovH
  *   pixelElevation = deviceElevation + (0.5 - py / (height - 1)) * fovV
  *
+ * Frame Selection Logic:
+ *   - newer-frame-wins: If incoming frame is newer than the cell's lastUpdated, it wins
+ *   - confidence-weighted: If same timestamp, higher confidence wins
+ *   - classification-equality: Same timestamp + confidence = incoming wins (idempotent)
+ *
  * Watch Out:
  *   Device roll correction is a known gap. Document it and defer.
  */
 
-import { SkyMask, ObstructionType, setSkyMaskCell } from './sky-mask';
+import { SkyMask, SkyMaskCell, ObstructionType, setSkyMaskCell, getSkyMaskCell } from './sky-mask';
 import { PixelGrid } from './classifier';
 import { Logger, DefaultLogger } from '@sunscope/core';
 
@@ -29,6 +34,7 @@ export interface ScanFrame {
   fieldOfViewH: number;     // Horizontal FoV in degrees
   fieldOfViewV: number;     // Vertical FoV in degrees
   pixelClassifications: PixelGrid; // height × width 2D array
+  pixelConfidences?: number[][];   // Optional per-pixel confidence (height × width), 0.0-1.0
 }
 
 /**
@@ -67,10 +73,15 @@ export function stitchFrame(
 
   let current = mask;
   let cellsUpdated = 0;
+  let cellsSkippedNewer = 0;
+  let cellsSkippedHigherConfidence = 0;
 
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
       const classification = frame.pixelClassifications[py][px];
+
+      // Get per-pixel confidence (default to 1.0 if not provided)
+      const pixelConfidence = frame.pixelConfidences?.[py]?.[px] ?? 1.0;
 
       // Project pixel to world azimuth/elevation
       const pixelAzimuth = frame.deviceAzimuth + (px / (width - 1) - 0.5) * frame.fieldOfViewH;
@@ -79,7 +90,30 @@ export function stitchFrame(
       // Skip cells below the horizon
       if (pixelElevation < 0) continue;
 
-      current = setSkyMaskCell(current, pixelAzimuth, pixelElevation, classification, 1.0);
+      // Get current cell to check timestamp/confidence
+      const existingCell = getSkyMaskCell(current, pixelAzimuth, pixelElevation);
+      const frameTime = frame.timestamp.getTime();
+      const existingTime = existingCell.lastUpdated?.getTime() ?? 0;
+
+      // Frame selection logic:
+      // 1. Newer frame wins (timestamp comparison)
+      // 2. Same timestamp: higher confidence wins
+      // 3. Same timestamp + confidence: incoming wins (idempotent)
+      const shouldWrite = 
+        existingCell.classification === ObstructionType.Unknown || // Empty cell always writable
+        frameTime > existingTime ||                               // Newer frame wins
+        (frameTime === existingTime && pixelConfidence >= existingCell.confidence); // Same time: higher/equal confidence wins
+
+      if (!shouldWrite) {
+        if (frameTime <= existingTime) {
+          cellsSkippedNewer++;
+        } else {
+          cellsSkippedHigherConfidence++;
+        }
+        continue;
+      }
+
+      current = setSkyMaskCell(current, pixelAzimuth, pixelElevation, classification, pixelConfidence);
       cellsUpdated++;
     }
   }
@@ -87,6 +121,8 @@ export function stitchFrame(
   const coverageAfter = getMaskCoverage(current);
   log.debug('stitchFrame complete', {
     cellsUpdated,
+    cellsSkippedNewer,
+    cellsSkippedHigherConfidence,
     coverageBefore,
     coverageAfter,
     elapsedMs: Date.now() - start,
